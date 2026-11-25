@@ -88,8 +88,9 @@ body.masked .ledger input{filter:blur(6px)}
 .pad{padding:18px}
 
 /* hero */
-.hero{display:flex;gap:14px;align-items:flex-start;padding:20px}
-.hero .left{flex:1 1 auto;min-width:0}
+.hero{padding:20px}
+.herotop{display:flex;gap:14px;align-items:flex-start}
+.herotop .left{flex:1 1 auto;min-width:0}
 .label{font-size:12.5px;font-weight:600;color:var(--ink-dim);margin:0 0 6px}
 .nw{font-size:clamp(34px,10.5vw,50px);font-weight:700;letter-spacing:-.035em;line-height:1.02;margin:0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .delta{font-size:12.5px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
@@ -98,12 +99,14 @@ body.masked .ledger input{filter:blur(6px)}
 .status{margin:13px 0 0;font-size:13.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:8px;line-height:1.4}
 .status .dot{width:8px;height:8px;border-radius:50%;flex:none;margin-top:1px}
 .statsub{font-size:12.5px;color:var(--ink-dim);margin:5px 0 0}
+.sincecap{font-size:12px;color:var(--ink-dim);font-weight:500;margin:7px 0 0}
+.status{margin-top:10px}
 .vessel{flex:0 0 auto;width:96px}
-@media (max-width:360px){ .hero{flex-wrap:wrap} .vessel{width:100%;display:flex;justify-content:center} .vessel svg{max-width:120px} }
+@media (max-width:360px){ .herotop{flex-wrap:wrap} .vessel{width:100%;display:flex;justify-content:center} .vessel svg{max-width:120px} }
 
 /* mini stats */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--hair);border-radius:var(--radius-sm);overflow:hidden;margin-top:16px}
-.stat{background:var(--glass-2);padding:11px 13px}
+.stat{background:var(--glass-2);padding:11px 13px;min-width:0}
 .stat .l{font-size:11px;color:var(--ink-dim);font-weight:600;margin:0 0 2px}
 .stat .v{font-size:16px;font-weight:700;letter-spacing:-.02em;margin:0}
 
@@ -331,7 +334,7 @@ details.pb[open] .chev{transform:rotate(90deg)}
     <div class="card glass pad" id="pbCard"></div>
 
     <div class="card glass pad">
-      <p class="about" style="margin:0">Highwater · v2.6 · data key <code>highwater.store</code> (fixed across updates, so new versions never overwrite your data). Your months, goals and playbook all live here and travel together in every export.</p>
+      <p class="about" style="margin:0">Highwater · v2.7 · data key <code>highwater.store</code> (fixed across updates, so new versions never overwrite your data). Your months, goals and playbook all live here and travel together in every export.</p>
     </div>
   </section>
 </main>
@@ -426,24 +429,26 @@ function renderHome(d){
   const base=inceptionNW(d.rows), allTime=c.nw-base, first=d.rows[0].m, yt=yearTrack(d.rows);
   let delta="";
   if(d.rows.length>1){ delta='<span class="delta '+(allTime>=0?"up":"down")+' fig">'+(allTime>=0?"▲":"▼")+" "+money(Math.abs(allTime))+"</span>"; }
+  const peakMonth=MN[c.m.m-1]+' ’'+String(c.m.y).slice(2);
   const status=atPeak
-    ? '<p class="status"><span class="dot" style="background:var(--accent)"></span>New high-water mark — you\'re at your peak.</p>'
+    ? '<p class="status"><span class="dot" style="background:var(--accent)"></span>New high-water mark · '+peakMonth+'</p>'
     : '<p class="status"><span class="dot" style="background:var(--silver)"></span><span class="fig">'+money(below)+'</span>&nbsp;below your peak of&nbsp;<span class="fig">'+money(d.hwm)+'</span></p>';
-  const since=d.rows.length>1?('since '+MN[first.m-1]+' ’'+String(first.y).slice(2)+' · '):'';
-  const sub='<p class="statsub fig">'+since+(toGoal>0?money(toGoal)+' to the Dec '+gy+' goal':'Dec '+gy+' goal cleared')+'</p>';
+  const sinceCap=d.rows.length>1?('<p class="sincecap">since '+MN[first.m-1]+' ’'+String(first.y).slice(2)+'</p>'):'';
   const ytv=yt?('<span style="color:'+(yt.change>=0?"var(--accent)":"var(--ink-2)")+'">'+(yt.change>=0?"▲":"▼")+' '+money(Math.abs(yt.change))+'</span>'):'—';
   el.innerHTML=
     reminderHTML()+
-    '<div class="card glass hero"><div class="left">'
-      +'<p class="label">Net worth · '+MN[c.m.m-1]+' '+c.m.y+'</p>'
-      +'<p class="nw"><span class="fig">'+money(c.nw)+'</span>'+delta+'</p>'
-      +status+sub
+    '<div class="card glass hero">'
+      +'<div class="herotop"><div class="left">'
+        +'<p class="label">Net worth · '+MN[c.m.m-1]+' '+c.m.y+'</p>'
+        +'<p class="nw"><span class="fig">'+money(c.nw)+'</span>'+delta+'</p>'
+        +sinceCap+status
+      +'</div><div class="vessel">'+gauge(d)+'</div></div>'
       +'<div class="stats">'
         +stat("High-water mark",money(d.hwm))
         +stat("Dec "+gy+" goal",money(gnw))
         +stat(c.m.y+" so far",ytv)
       +'</div>'
-    +'</div><div class="vessel">'+gauge(d)+'</div></div>'
+    +'</div>'
     +'<div class="card glass pad"><div class="label" style="margin-bottom:4px">Goals · 31 Dec '+gy+'</div>'+goals(d)+'</div>';
 }
 const stat=(l,v)=>'<div class="stat"><p class="l">'+l+'</p><p class="v fig">'+v+'</p></div>';
@@ -464,7 +469,7 @@ function gauge(d){
   const pc=v=>Math.max(0,Math.min(1,v/top));
   const wy=(1-pc(c.nw))*innerH+1, py=(1-pc(peak))*innerH+1, gy=(1-pc(goal))*innerH+1;
   const pctGoal=goal>0?Math.round(c.nw/goal*100):0;
-  return '<svg viewBox="0 0 '+W+' '+(H+22)+'" role="img" aria-label="Net worth toward goal">'
+  return '<svg viewBox="0 -9 '+W+' '+(H+31)+'" role="img" aria-label="Net worth toward goal">'
    +'<defs><clipPath id="vz"><rect x="'+pad+'" y="1" width="'+inW+'" height="'+innerH+'" rx="15"/></clipPath></defs>'
    +'<rect x="'+pad+'" y="1" width="'+inW+'" height="'+innerH+'" rx="15" fill="var(--water)"/>'
    +'<g clip-path="url(#vz)"><rect x="0" y="'+wy+'" width="'+W+'" height="'+(H-wy)+'" fill="var(--fill)" opacity=".16"/>'
@@ -472,8 +477,8 @@ function gauge(d){
      +'<line x1="0" x2="'+W+'" y1="'+wy+'" y2="'+wy+'" stroke="var(--fill)" stroke-width="1.5" opacity=".5"/></g>'
    +'<rect x="'+pad+'" y="1" width="'+inW+'" height="'+innerH+'" rx="15" fill="none" stroke="var(--hair)"/>'
    +'<line x1="'+pad+'" x2="'+(W-pad)+'" y1="'+gy+'" y2="'+gy+'" stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="4 3"/>'
-   +'<text x="'+(W-pad)+'" y="'+(gy-4)+'" text-anchor="end" fill="var(--accent)" font-size="8.5" font-weight="700">GOAL</text>'
-   +(peak>c.nw+1?'<line x1="'+pad+'" x2="'+(W-pad)+'" y1="'+py+'" y2="'+py+'" stroke="var(--silver)" stroke-width="1.1" stroke-dasharray="2 3"/><text x="'+pad+'" y="'+(py-4)+'" fill="var(--ink-dim)" font-size="8.5" font-weight="700">PEAK</text>':'')
+   +'<text x="'+(W-pad)+'" y="'+Math.max(gy-4,3)+'" text-anchor="end" fill="var(--accent)" font-size="8.5" font-weight="700">GOAL</text>'
+   +(peak>c.nw+1?'<line x1="'+pad+'" x2="'+(W-pad)+'" y1="'+py+'" y2="'+py+'" stroke="var(--silver)" stroke-width="1.1" stroke-dasharray="2 3"/><text x="'+pad+'" y="'+Math.max(py-4,3)+'" fill="var(--ink-dim)" font-size="8.5" font-weight="700">PEAK</text>':'')
    +'<text x="'+(W/2)+'" y="'+(H+15)+'" text-anchor="middle" fill="var(--ink-dim)" font-size="10" font-weight="600">'+pctGoal+'% to goal</text></svg>';
 }
 function goals(d){
