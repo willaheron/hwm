@@ -99,7 +99,16 @@ body.masked .ledger input{filter:blur(6px)}
 .status{margin:13px 0 0;font-size:13.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:8px;line-height:1.4}
 .status .dot{width:8px;height:8px;border-radius:50%;flex:none;margin-top:1px}
 .statsub{font-size:12.5px;color:var(--ink-dim);margin:5px 0 0}
-.sincecap{font-size:12px;color:var(--ink-dim);font-weight:500;margin:7px 0 0}
+.gainline{margin:11px 0 0}
+.sincecap{font-size:12px;color:var(--ink-dim);font-weight:500;margin:5px 0 0}
+.focushead{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.focushead .label{margin:0}
+.focushead .btn{margin-left:auto;padding:5px 13px}
+.focustitle{font-size:16.5px;font-weight:700;letter-spacing:-.01em;margin:0;color:var(--ink);line-height:1.3}
+.focustitle.focusempty{color:var(--ink-dim);font-weight:600}
+.focusnote{font-size:13.5px;color:var(--ink-2);margin:7px 0 0;line-height:1.55;white-space:pre-wrap}
+.focustitleinput{width:100%;border:1px solid var(--hair);background:var(--bg-1);color:var(--ink);font:inherit;font-size:16px;font-weight:600;padding:11px;border-radius:11px;margin-bottom:10px}
+.focustitleinput:focus{border-color:var(--accent);outline:none}
 .status{margin-top:10px}
 .nowrap{white-space:nowrap}
 .vessel{flex:0 0 auto;width:96px}
@@ -107,8 +116,8 @@ body.masked .ledger input{filter:blur(6px)}
 
 /* mini stats */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--hair);border-radius:var(--radius-sm);overflow:hidden;margin-top:16px}
-.stat{background:var(--glass-2);padding:11px 13px;min-width:0}
-.stat .l{font-size:11px;color:var(--ink-dim);font-weight:600;margin:0 0 4px;line-height:1.3;min-height:29px;display:flex;align-items:flex-start}
+.stat{background:var(--glass-2);padding:11px 8px;min-width:0;text-align:center}
+.stat .l{font-size:11px;color:var(--ink-dim);font-weight:600;margin:0 0 4px;line-height:1.25;min-height:28px;display:flex;align-items:flex-end;justify-content:center}
 .stat .v{font-size:16px;font-weight:700;letter-spacing:-.02em;margin:0}
 
 /* goals */
@@ -335,7 +344,7 @@ details.pb[open] .chev{transform:rotate(90deg)}
     <div class="card glass pad" id="pbCard"></div>
 
     <div class="card glass pad">
-      <p class="about" style="margin:0">Highwater · v2.9 · data key <code>highwater.store</code> (fixed across updates, so new versions never overwrite your data). Your months, goals and playbook all live here and travel together in every export.</p>
+      <p class="about" style="margin:0">Highwater · v3.1 · data key <code>highwater.store</code> (fixed across updates, so new versions never overwrite your data). Your months, goals and playbook all live here and travel together in every export.</p>
     </div>
   </section>
 </main>
@@ -350,6 +359,7 @@ details.pb[open] .chev{transform:rotate(90deg)}
 <div class="scrim" id="scrim"><div class="sheet" id="sheet">
   <div class="grab"></div>
   <h3 id="mTitle"></h3><p id="mDesc"></p>
+  <input id="focusTitleInput" class="focustitleinput" type="text" placeholder="Focus — e.g. Everything into Pearler" style="display:none">
   <textarea id="mText" spellcheck="false"></textarea>
   <div class="row" id="mRow"></div>
 </div></div>
@@ -376,12 +386,15 @@ const $=s=>document.querySelector(s);
 const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const money=(n,sign)=>{ if(n==null||isNaN(n))return "—";
   return (sign&&n>0?"+":"")+(n<0?"−":"")+"$"+Math.abs(Math.round(n)).toLocaleString("en-AU"); };
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const DEFAULT_FOCUS={title:"Everything into cash on call",note:"It's an expensive stretch, so rather than stressing to drip small amounts into Pearler, everything goes to cash on call for peace of mind. Reassess the investing position after the 14 January pay, once the expensive period is behind me."};
 const idx=(y,m)=>(y-2025)*12+(m-1);
 
 function migrate(s){ s=s||{}; s.months=Array.isArray(s.months)?s.months:[];
   s.goal=Object.assign({},DEFAULT_GOAL,s.goal||{});
   s.goalYear=s.goalYear||DEFAULT_GOAL_YEAR;
   s.playbook=Array.isArray(s.playbook)?s.playbook:JSON.parse(JSON.stringify(DEFAULT_PLAYBOOK));
+  s.focus=(s.focus&&typeof s.focus==="object")?{title:s.focus.title||"",note:s.focus.note||""}:JSON.parse(JSON.stringify(DEFAULT_FOCUS));
   s.settings=Object.assign({theme:"system",masked:false,range:"all"},s.settings||{}); return s; }
 function hasReal(s){ return !!(s&&Array.isArray(s.months)&&s.months.some(m=>((+m.cash||0)||(+m.savings||0)||(+m.inv||0)||(+m.sl||0)||(+m.debt||0)))); }
 function load(){
@@ -441,18 +454,26 @@ function renderHome(d){
     '<div class="card glass hero">'
       +'<div class="herotop"><div class="left">'
         +'<p class="label">Current high-water mark</p>'
-        +'<p class="nw"><span class="fig">'+money(d.hwm)+'</span>'+delta+'</p>'
-        +sinceCap+hwmLine
+        +'<p class="nw"><span class="fig">'+money(d.hwm)+'</span></p>'
+        +hwmLine+(delta?'<p class="gainline">'+delta+'</p>':'')+sinceCap
       +'</div><div class="vessel">'+gauge(d)+'</div></div>'
       +'<div class="stats">'
-        +stat("Net worth",money(c.nw))
+        +stat("Current net worth",money(c.nw))
         +stat("Dec "+gy+" goal",money(gnw))
         +stat(c.m.y+" so far",ytv)
       +'</div>'
     +'</div>'
+    +focusCard(state.focus||{})
     +'<div class="card glass pad"><div class="label" style="margin-bottom:4px">Goals · 31 Dec '+gy+'</div>'+goals(d)+'</div>';
 }
 const stat=(l,v)=>'<div class="stat"><p class="l">'+l+'</p><p class="v fig">'+v+'</p></div>';
+function focusCard(f){
+  return '<div class="card glass pad focuscard">'
+    +'<div class="focushead"><span class="label">Current focus</span><button class="btn sm" onclick="openFocus()">Edit</button></div>'
+    +(f.title?'<p class="focustitle">'+esc(f.title)+'</p>':'<p class="focustitle focusempty">Tap Edit to set your focus</p>')
+    +(f.note?'<p class="focusnote">'+esc(f.note)+'</p>':'')
+    +'</div>';
+}
 const BELL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
 function reminderHTML(){
   if(!state.months.length)return "";
@@ -663,8 +684,19 @@ $("#addBtn").addEventListener("click",addMonth);
 
 /* ---------- export / import ---------- */
 const scrim=$("#scrim");
+function openFocus(){
+  scrim.classList.add("on");
+  $("#mTitle").textContent="Current focus";
+  $("#mDesc").textContent="A short line for what you're focused on right now, plus an optional note.";
+  const ft=$("#focusTitleInput"); ft.style.display="block"; ft.value=(state.focus&&state.focus.title)||"";
+  const ta=$("#mText"); ta.readOnly=false; ta.value=(state.focus&&state.focus.note)||""; ta.placeholder="Optional detail…"; ta.style.height="120px";
+  $("#mRow").innerHTML='<button class="btn sm" id="fCancel">Cancel</button><button class="btn sm pri" id="fSave">Save</button>';
+  $("#fCancel").onclick=closeSheet;
+  $("#fSave").onclick=()=>{ state.focus={title:ft.value.trim(),note:ta.value.trim()}; save(); renderHome(derive()); closeSheet(); };
+}
 function openSheet(mode){
   scrim.classList.add("on");
+  $("#focusTitleInput").style.display="none";
   if(mode==="export"){
     $("#mTitle").textContent="Export backup";
     $("#mDesc").textContent="Copy this somewhere safe, or download the file. Import it on another device or after reinstalling.";
@@ -683,7 +715,7 @@ function openSheet(mode){
     $("#applyBtn").onclick=()=>applyImport($("#mText").value);
   }
 }
-function closeSheet(){ scrim.classList.remove("on"); }
+function closeSheet(){ scrim.classList.remove("on"); const ft=$("#focusTitleInput"); if(ft)ft.style.display="none"; const ta=$("#mText"); if(ta)ta.style.height=""; }
 function applyImport(txt){
   try{ const s=JSON.parse(txt); if(!s||!Array.isArray(s.months))throw 0;
     state=migrate(s); save(); applyTheme(); syncMask(); buildLedger(); renderGoalEditor(); pbEditing=false; renderPlaybook(); refresh(); go("home"); closeSheet(); }
