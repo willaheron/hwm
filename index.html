@@ -93,7 +93,11 @@ body.masked .ledger input{filter:blur(6px)}
 .herotop .left{flex:1 1 auto;min-width:0}
 .label{font-size:12.5px;font-weight:600;color:var(--ink-dim);margin:0 0 6px}
 .nw{font-size:clamp(34px,10.5vw,50px);font-weight:700;letter-spacing:-.035em;line-height:1.02;margin:0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.delta{font-size:13px;font-weight:700;padding:4px 11px;border-radius:999px;white-space:nowrap;font-feature-settings:normal;letter-spacing:.2px}
+.delta{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;font-feature-settings:normal;letter-spacing:.2px}
+.hwmhead{position:relative;margin-bottom:3px;min-height:15px}
+.hwmhead .label{margin:0}
+.gainwrap{position:absolute;top:-1px;right:0;display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:right}
+.sincecap2{font-size:10.5px;color:var(--ink-dim);font-weight:500;white-space:nowrap;line-height:1.2}
 .delta.up{color:var(--accent);background:var(--accent-soft)}
 .delta.down{color:var(--ink-2);background:var(--fill-dim)}
 .status{margin:13px 0 0;font-size:13.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:8px;line-height:1.4}
@@ -111,14 +115,14 @@ body.masked .ledger input{filter:blur(6px)}
 .focustitleinput:focus{border-color:var(--accent);outline:none}
 .status{margin-top:10px}
 .nowrap{white-space:nowrap}
-.vessel{flex:0 0 auto;width:96px}
+.vessel{flex:0 0 auto;width:76px}
 @media (max-width:360px){ .herotop{flex-wrap:wrap} .vessel{width:100%;display:flex;justify-content:center} .vessel svg{max-width:120px} }
 
 /* mini stats */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--hair);border-radius:var(--radius-sm);overflow:hidden;margin-top:16px}
-.stat{background:var(--glass-2);padding:11px 8px;min-width:0;text-align:center}
-.stat .l{font-size:11px;color:var(--ink-dim);font-weight:600;margin:0 0 4px;line-height:1.25;min-height:28px;display:flex;align-items:flex-end;justify-content:center}
-.stat .v{font-size:16px;font-weight:700;letter-spacing:-.02em;margin:0}
+.stat{background:var(--glass-2);padding:11px 6px;min-width:0;text-align:center}
+.stat .l{font-size:10px;color:var(--ink-dim);font-weight:600;margin:0 0 4px;white-space:nowrap;letter-spacing:.1px}
+.stat .v{font-size:15px;font-weight:700;letter-spacing:-.02em;margin:0;white-space:nowrap}
 
 /* goals */
 .goal{display:grid;grid-template-columns:1fr auto;gap:5px 12px;padding:13px 0;border-top:1px solid var(--hair)}
@@ -344,7 +348,7 @@ details.pb[open] .chev{transform:rotate(90deg)}
     <div class="card glass pad" id="pbCard"></div>
 
     <div class="card glass pad">
-      <p class="about" style="margin:0">Highwater · v3.1 · data key <code>highwater.store</code> (fixed across updates, so new versions never overwrite your data). Your months, goals and playbook all live here and travel together in every export.</p>
+      <p class="about" style="margin:0">Highwater · v3.3 · data key <code>highwater.store</code> (fixed across updates, so new versions never overwrite your data). Your months, goals and playbook all live here and travel together in every export.</p>
     </div>
   </section>
 </main>
@@ -447,15 +451,16 @@ function renderHome(d){
   const hwmCurrent=hwmRow===d.cur;
   const hwmMonth=MN[hwmRow.m.m-1]+' ’'+String(hwmRow.m.y).slice(2);
   const hwmLine='<p class="status"><span class="dot" style="background:'+(hwmCurrent?'var(--accent)':'var(--silver)')+'"></span>'+hwmMonth+'</p>';
-  const sinceCap=d.rows.length>1?('<p class="sincecap">since '+MN[first.m-1]+' ’'+String(first.y).slice(2)+'</p>'):'';
+  const sinceTxt=d.rows.length>1?('since '+MN[first.m-1]+' ’'+String(first.y).slice(2)):'';
+  const gainWrap=delta?('<div class="gainwrap">'+delta+(sinceTxt?'<span class="sincecap2">'+sinceTxt+'</span>':'')+'</div>'):'';
   const ytv=yt?('<span style="color:'+(yt.change>=0?"var(--accent)":"var(--ink-2)")+'">'+(yt.change>=0?"▲":"▼")+' '+money(Math.abs(yt.change))+'</span>'):'—';
   el.innerHTML=
     reminderHTML()+
     '<div class="card glass hero">'
       +'<div class="herotop"><div class="left">'
-        +'<p class="label">Current high-water mark</p>'
+        +'<div class="hwmhead"><span class="label">Current high-water mark</span>'+gainWrap+'</div>'
         +'<p class="nw"><span class="fig">'+money(d.hwm)+'</span></p>'
-        +hwmLine+(delta?'<p class="gainline">'+delta+'</p>':'')+sinceCap
+        +hwmLine
       +'</div><div class="vessel">'+gauge(d)+'</div></div>'
       +'<div class="stats">'
         +stat("Current net worth",money(c.nw))
