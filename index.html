@@ -348,7 +348,7 @@ details.pb[open] .chev{transform:rotate(90deg)}
     <div class="card glass pad" id="pbCard"></div>
 
     <div class="card glass pad">
-      <p class="about" style="margin:0">Highwater · v3.3 · data key <code>highwater.store</code> (fixed across updates, so new versions never overwrite your data). Your months, goals and playbook all live here and travel together in every export.</p>
+      <p class="about" style="margin:0">Highwater · v3.4 · data key <code>highwater.store</code> (fixed across updates, so new versions never overwrite your data). Your months, goals and playbook all live here and travel together in every export.</p>
     </div>
   </section>
 </main>
@@ -451,21 +451,22 @@ function renderHome(d){
   const hwmCurrent=hwmRow===d.cur;
   const hwmMonth=MN[hwmRow.m.m-1]+' ’'+String(hwmRow.m.y).slice(2);
   const hwmLine='<p class="status"><span class="dot" style="background:'+(hwmCurrent?'var(--accent)':'var(--silver)')+'"></span>'+hwmMonth+'</p>';
-  const sinceTxt=d.rows.length>1?('since '+MN[first.m-1]+' ’'+String(first.y).slice(2)):'';
-  const gainWrap=delta?('<div class="gainwrap">'+delta+(sinceTxt?'<span class="sincecap2">'+sinceTxt+'</span>':'')+'</div>'):'';
-  const ytv=yt?('<span style="color:'+(yt.change>=0?"var(--accent)":"var(--ink-2)")+'">'+(yt.change>=0?"▲":"▼")+' '+money(Math.abs(yt.change))+'</span>'):'—';
+  const arrow=(n)=>'<span style="color:'+(n>=0?"var(--accent)":"var(--ink-2)")+'">'+(n>=0?"▲":"▼")+' '+money(Math.abs(n))+'</span>';
+  const ytv=yt?arrow(yt.change):'—';
+  const sinceLabel=d.rows.length>1?('Since '+MN[first.m-1]+' ’'+String(first.y).slice(2)):'Since start';
+  const sincev=d.rows.length>1?arrow(c.nw-base):'—';
   el.innerHTML=
     reminderHTML()+
     '<div class="card glass hero">'
       +'<div class="herotop"><div class="left">'
-        +'<div class="hwmhead"><span class="label">Current high-water mark</span>'+gainWrap+'</div>'
+        +'<p class="label">Current high-water mark</p>'
         +'<p class="nw"><span class="fig">'+money(d.hwm)+'</span></p>'
         +hwmLine
       +'</div><div class="vessel">'+gauge(d)+'</div></div>'
       +'<div class="stats">'
         +stat("Current net worth",money(c.nw))
-        +stat("Dec "+gy+" goal",money(gnw))
         +stat(c.m.y+" so far",ytv)
+        +stat(sinceLabel,sincev)
       +'</div>'
     +'</div>'
     +focusCard(state.focus||{})
